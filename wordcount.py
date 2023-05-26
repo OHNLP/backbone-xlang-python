@@ -2,6 +2,19 @@ import json
 from typing import List
 
 
+# This is a required function that tells the backbone python module launcher where to find the component definition
+def get_component_def():
+    return ExampleWordCountBackboneComponent()
+
+
+# This is a required function that tells the backbone python module launcher where to find the DoFn definition
+def get_do_fn():
+    return ExampleWordCountDoFn()
+
+
+# This is an example backbone component definition. It is equivalent to a backbone transform component definition
+# See: org.ohnlp.backbone.api.components.xlang.python.PythonBackbonePipelineComponent
+# for interface specification
 class ExampleWordCountBackboneComponent(object):
     def __init__(self):
         self.input_col = None
@@ -36,6 +49,9 @@ class ExampleWordCountBackboneComponent(object):
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonBackbonePipelineComponent"]
 
 
+# This is an example do function. It is what actually defines what gets done per record.
+# Please refer to documentation on org.ohnlp.backbone.api.components.xlang.python.PythonOneToOneTransformDoFn
+# for function definitions
 class ExampleWordCountDoFn(object):
     def __init__(self):
         self.output_col = None
@@ -59,11 +75,4 @@ class ExampleWordCountDoFn(object):
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonOneToOneTransformDoFn"]
-
-def get_component_def():
-    return ExampleWordCountBackboneComponent()
-
-
-def get_do_fn():
-    return ExampleWordCountDoFn()
 
