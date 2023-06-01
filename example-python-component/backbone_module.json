@@ -6,7 +6,8 @@
   "components": [
     {
       "name": "(Python Example) Count number of words in column",
-      "entry_point": "wordcount.py",
+      "entry_point": "wordcount",
+      "class_name": "WordCountComponentDefinition",
       "config_def": {
         "input_col": "COLUMNDEF",
         "output_col": "STRING"
