@@ -1,3 +1,4 @@
+import setuptools
 from setuptools import setup
 
 
@@ -10,6 +11,6 @@ setup(
     description="Python support for OHNLP Toolkit Backbone Components",
     author="Andrew Wen",
     author_email="contact@ohnlp.org",
-    packages=['ohnlp'],
+    packages=setuptools.find_packages(),
     install_requires=requirements
 )
