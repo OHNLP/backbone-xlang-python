@@ -2,19 +2,20 @@ import importlib
 import json
 import secrets
 import string
-import sys
 from types import ModuleType
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    entrypoint_import: str = args[0]
-    class_name: str = args[1]
-    first_init: bool = args[2] == 'component'
+from ohnlp.toolkit.backbone.api import BackboneComponentDefinition
+
+
+def launch_bridge(entrypoint: str, class_name: str, init_type: str):
+    first_init: bool = init_type == 'component'
 
     # Import the backbone module to be used
-    module: ModuleType = importlib.import_module(entrypoint_import)
+    module: ModuleType = importlib.import_module(entrypoint)
+    cls = getattr(module, class_name)
+    entry_class: BackboneComponentDefinition = cls()
 
     # Generate an authentication token for this session
     auth_token = ''.join(secrets.choice(string.ascii_uppercase + string.digits)
@@ -22,9 +23,9 @@ if __name__ == '__main__':
 
     # Get appropriate entry point
     if first_init:
-        entry_point = module.get_component_def()
+        entry_point = entry_class.get_component_def()
     else:
-        entry_point = module.get_do_fn()
+        entry_point = entry_class.get_do_fn()
 
     # Bootup python endpoint
     gateway = ClientServer(

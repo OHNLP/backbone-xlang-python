@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import json
 from enum import Enum
 from typing import List, Union
 
@@ -100,7 +102,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def python_row_from_json_string(self, json_row: str) -> Row:
         data: dict = json.loads(json_row)
-        schema: Schema = parse_schema(data['schema'])
+        schema: Schema = self.parse_schema_from_json(data['schema'])
         raw_row: dict = data['contents']
         return self.parse_row_from_json(schema, raw_row)
 
@@ -116,11 +118,11 @@ class BridgedInterfaceWithConvertableDataTypes(object):
             return None
         else:
             if content_type.type_name == TypeName.ROW:
-                return self.parse_row_from_json(field.field_type.content_obj_fields, data[field.name])
+                return self.parse_row_from_json(content_type.content_obj_fields, val)
             elif content_type.type_name == TypeName.ARRAY:
-                child_type: FieldType = field.field_type.array_content_type
+                child_type: FieldType = content_type.array_content_type
                 sub_values: List[object] = []
-                for entry in data[field.name]:
+                for entry in val:
                     sub_values.append(self.parse_field_value_from_json(child_type, entry))
                 return sub_values
             else:
