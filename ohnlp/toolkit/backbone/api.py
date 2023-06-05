@@ -1,14 +1,15 @@
+from __future__ import annotations
 from enum import Enum
 from typing import List, Union
 
 
 class FieldType(object):
-    def __init__(self, type_name: TypeName, array_content_type: Union[FieldMeta, None] = None,
+    def __init__(self, type_name: TypeName, array_content_type: Union[FieldType, None] = None,
                  row_content_type: Union[Schema, None] = None):
         if row_content_type is None:
             row_content_type = []
         self.type_name: TypeName = type_name
-        self.array_content_type: FieldMeta = array_content_type
+        self.array_content_type: FieldType = array_content_type
         self.content_obj_fields: Schema = row_content_type
 
 

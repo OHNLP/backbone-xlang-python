@@ -1,13 +1,13 @@
-import setuptools
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="ohnlp-backbone-xlang-python",
-    version="1.0.2",
+    version="1.0.4",
     description="Python support for OHNLP Toolkit Backbone Components",
     author="Andrew Wen",
     author_email="contact@ohnlp.org",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
+    python_requires='>3.7',
     install_requires=[
         'certifi==2023.5.7',
         'charset-normalizer==3.1.0',
