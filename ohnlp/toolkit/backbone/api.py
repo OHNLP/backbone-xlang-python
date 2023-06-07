@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union
 
@@ -171,30 +172,37 @@ class BridgedInterfaceWithConvertableDataTypes(object):
             return data
 
 
-class BackboneComponentDefinition(object):
+class BackboneComponentDefinition(ABC):
+    @abstractmethod
     def get_component_def(self) -> BackboneComponent:
         pass
 
+    @abstractmethod
     def get_do_fn(self) -> BackboneComponentOneToOneDoFn:
         pass
 
 
-class BackboneComponent(BridgedInterfaceWithConvertableDataTypes):
+class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
     def __init__(self):
         pass
 
+    @abstractmethod
     def init(self, configstr: str) -> None:
         pass
 
+    @abstractmethod
     def to_do_fn_config(self) -> str:
         pass
 
+    @abstractmethod
     def get_input_tag(self) -> str:
         pass
 
+    @abstractmethod
     def get_output_tags(self) -> List[str]:
         pass
 
+    @abstractmethod
     def calculate_output_schema(self, input_schema: Schema) -> Schema:
         pass
 
@@ -202,19 +210,23 @@ class BackboneComponent(BridgedInterfaceWithConvertableDataTypes):
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonBackbonePipelineComponent"]
 
 
-class BackboneComponentOneToOneDoFn(BridgedInterfaceWithConvertableDataTypes):
+class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataTypes):
     def __init__(self):
         pass
 
+    @abstractmethod
     def init_from_driver(self, config_json_str: str) -> None:
         pass
 
+    @abstractmethod
     def on_bundle_start(self) -> None:
         pass
 
+    @abstractmethod
     def on_bundle_end(self) -> None:
         pass
 
+    @abstractmethod
     def apply(self, input_row: Row) -> List[Row]:
         pass
 
