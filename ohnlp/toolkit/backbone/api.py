@@ -203,7 +203,7 @@ class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
         pass
 
     @abstractmethod
-    def calculate_output_schema(self, input_schema: Schema) -> Schema:
+    def calculate_output_schema(self, input_schema: Schema) -> dict[str, Schema]:
         pass
 
     class Java:
