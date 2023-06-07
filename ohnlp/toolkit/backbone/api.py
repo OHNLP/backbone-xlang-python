@@ -215,7 +215,7 @@ class BackboneComponentOneToOneDoFn(BridgedInterfaceWithConvertableDataTypes):
     def on_bundle_end(self) -> None:
         pass
 
-    def apply(self, input_row: Row) -> Row:
+    def apply(self, input_row: Row) -> List[Row]:
         pass
 
     class Java:
