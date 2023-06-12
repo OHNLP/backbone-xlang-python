@@ -69,14 +69,25 @@ class Row(object):
     def get_schema(self) -> Schema:
         return self.schema
 
-    def get_value(self, field_name: str) -> Union[object, None]:
+    def get_field_index(self, field_name: str) -> Union[int, None]:
         if self.field_idx[field_name] is not None:
-            return self.values[self.field_idx[field_name]]
+            return self.field_idx[field_name]
         else:
             return None
 
+    def get_value(self, field_name: str) -> Union[object, None]:
+        index = self.get_field_index(field_name)
+        return None if index is None else self.values[index]
+
     def get_values(self) -> List[object]:
         return self.values
+
+    def set_value(self, field_name: str, value: object):
+        index = self.get_field_index(field_name)
+        if index is not None:
+            self.values[index] = value
+        else:
+            raise KeyError("Reference to non-existent field_name " + field_name + " in set_value")
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonRow"]
