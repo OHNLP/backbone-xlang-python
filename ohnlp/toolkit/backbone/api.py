@@ -82,6 +82,21 @@ class Row(object):
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonRow"]
 
 
+class TaggedRow(object):
+    def __init__(self, tag: str, row: Row):
+        self.tag: str = tag
+        self.row: Row = row
+
+    def get_tag(self) -> str:
+        return self.tag
+
+    def get_row(self) -> Row:
+        return self.row
+
+    class Java:
+        implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonTaggedRow"]
+
+
 class BridgedInterfaceWithConvertableDataTypes(object):
     def python_schema_from_json_string(self, json_schema: str) -> Schema:
         schema_def: dict = json.loads(json_schema)
@@ -232,3 +247,27 @@ class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataType
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonOneToOneTransformDoFn"]
+
+
+class BackboneComponentOneToManyDoFn(ABC, BridgedInterfaceWithConvertableDataTypes):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def init_from_driver(self, config_json_str: str) -> None:
+        pass
+
+    @abstractmethod
+    def on_bundle_start(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_bundle_end(self) -> None:
+        pass
+
+    @abstractmethod
+    def apply(self, input_row: Row) -> List[TaggedRow]:
+        pass
+
+    class Java:
+        implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonOneToManyTransformDoFn"]
