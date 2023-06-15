@@ -204,7 +204,7 @@ class BackboneComponentDefinition(ABC):
         pass
 
     @abstractmethod
-    def get_do_fn(self) -> BackboneComponentOneToOneDoFn:
+    def get_do_fn(self) -> Union[BackboneComponentOneToOneDoFn, BackboneComponentOneToManyDoFn]:
         pass
 
 
