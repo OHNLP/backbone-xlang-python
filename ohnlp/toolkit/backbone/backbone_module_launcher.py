@@ -5,7 +5,6 @@ import string
 from types import ModuleType
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
-from py4j.java_gateway import launch_gateway
 
 from ohnlp.toolkit.backbone.api import BackboneComponentDefinition
 
@@ -27,7 +26,6 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str):
         entry_point = entry_class.get_component_def()
     else:
         entry_point = entry_class.get_do_fn()
-    launch_gateway()
     # Bootup python endpoint
     gateway = ClientServer(
         java_parameters=JavaParameters(auth_token=auth_token),
