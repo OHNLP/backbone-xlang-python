@@ -235,14 +235,14 @@ class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
         pass
 
     def proxied_get_output_tags(self):
-        return ListConverter().convert(self.get_output_tags(), self.gateway)
+        return ListConverter().convert(self.get_output_tags(), self.gateway._gateway_client)
 
     @abstractmethod
     def get_output_tags(self) -> List[str]:
         pass
 
     def proxied_calculate_output_schema(self, input_schema: Schema):
-        return MapConverter().convert(input_schema, self.gateway)
+        return MapConverter().convert(input_schema, self.gateway._gateway_client)
 
     @abstractmethod
     def calculate_output_schema(self, input_schema: Schema) -> dict[str, Schema]:
