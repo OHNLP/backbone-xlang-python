@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union
 
+from py4j.java_collections import ListConverter, MapConverter
+from py4j.java_gateway import JavaGateway
+
 
 class FieldType(object):
     def __init__(self, type_name: TypeName, array_content_type: Union[FieldType, None] = None,
@@ -109,6 +112,13 @@ class TaggedRow(object):
 
 
 class BridgedInterfaceWithConvertableDataTypes(object):
+
+    def __init__(self):
+        self.gateway = None
+
+    def python_init(self, gateway: JavaGateway):
+        self.gateway = gateway
+
     def python_schema_from_json_string(self, json_schema: str) -> Schema:
         schema_def: dict = json.loads(json_schema)
         return self.parse_schema_from_json(schema_def)
@@ -116,7 +126,8 @@ class BridgedInterfaceWithConvertableDataTypes(object):
     def parse_schema_from_json(self, schema_def: dict) -> Schema:
         schema_fields: List[SchemaField] = []
         for field_name in schema_def:
-            schema_fields.append(SchemaField.of(field_name, self.parse_schema_field_type_from_json(schema_def[field_name])))
+            schema_fields.append(
+                SchemaField.of(field_name, self.parse_schema_field_type_from_json(schema_def[field_name])))
         return Schema(schema_fields)
 
     def parse_schema_field_type_from_json(self, val) -> FieldType:
@@ -199,6 +210,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
 
 class BackboneComponentDefinition(ABC):
+
     @abstractmethod
     def get_component_def(self) -> BackboneComponent:
         pass
@@ -209,8 +221,6 @@ class BackboneComponentDefinition(ABC):
 
 
 class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
-    def __init__(self):
-        pass
 
     @abstractmethod
     def init(self, configstr: str) -> None:
@@ -224,9 +234,15 @@ class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
     def get_input_tag(self) -> str:
         pass
 
+    def proxied_get_output_tags(self):
+        return ListConverter().convert(self.get_output_tags(), self.gateway)
+
     @abstractmethod
     def get_output_tags(self) -> List[str]:
         pass
+
+    def proxied_calculate_output_schema(self, input_schema: Schema):
+        return MapConverter().convert(input_schema, self.gateway)
 
     @abstractmethod
     def calculate_output_schema(self, input_schema: Schema) -> dict[str, Schema]:

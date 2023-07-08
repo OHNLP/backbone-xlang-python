@@ -33,6 +33,8 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str):
         python_server_entry_point=entry_point,
     )
 
+    entry_point.python_init(gateway)
+
     java_port: int = gateway.java_parameters.port
     python_port: int = gateway.python_parameters.port
 
