@@ -40,7 +40,7 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str):
 
     # Bootup python endpoint
     gateway = ClientServer(
-        java_parameters=JavaParameters(port=java_port, auth_token=auth_token, auto_convert=True),
+        java_parameters=JavaParameters(port=java_port, auth_token=auth_token),
         python_parameters=PythonParameters(port=python_port, auth_token=auth_token),
         python_server_entry_point=entry_point,
     )
