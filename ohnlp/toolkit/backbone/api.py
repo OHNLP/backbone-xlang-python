@@ -132,7 +132,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_schema_field_type_from_json(self, val) -> FieldType:
         if type(val) == str:
-            return FieldType(TypeName(str(val)))
+            return FieldType(TypeName[str(val)])
         elif type(val) == dict:
             return FieldType(TypeName.ROW, row_content_type=self.parse_schema_from_json(val))
         else:
