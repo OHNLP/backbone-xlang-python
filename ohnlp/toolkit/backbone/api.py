@@ -6,7 +6,7 @@ from enum import Enum
 from typing import List, Union
 
 from py4j.java_collections import ListConverter, MapConverter
-from py4j.java_gateway import JavaGateway
+from py4j.java_gateway import JavaGateway, JavaMember
 
 
 class FieldType(object):
@@ -45,11 +45,15 @@ class SchemaField(object):
 
 
 class Schema(object):
-    def __init__(self, fields: List[SchemaField]):
+    def __init__(self, fields: List[SchemaField], gateway: JavaGateway):
+        self.gateway: JavaGateway = gateway
         self.fields: List[SchemaField] = fields
         self.fields_by_name: dict = {}
         for field in fields:
             self.fields_by_name[field.name] = field
+
+    def proxied_get_fields(self):
+        return ListConverter().convert(self.fields, self.gateway._gateway_client)
 
     def get_fields(self) -> List[SchemaField]:
         return self.fields
@@ -65,8 +69,8 @@ class Row(object):
     def __init__(self, schema: Schema, values: List[object]):
         self.schema: Schema = schema
         self.field_idx: dict[str, int] = {}
-        for i in range(0, len(schema.fields)):
-            self.field_idx[schema.fields[i].name] = i
+        for i in range(0, len(schema.get_fields())):
+            self.field_idx[schema.get_fields()[i].name] = i
         self.values: List[object] = values
 
     def get_schema(self) -> Schema:
@@ -81,6 +85,9 @@ class Row(object):
     def get_value(self, field_name: str) -> Union[object, None]:
         index = self.get_field_index(field_name)
         return None if index is None else self.values[index]
+
+    def proxied_get_values(self):
+        return ListConverter().convert(self.get_values(), self.get_schema().gateway._gateway_client)
 
     def get_values(self) -> List[object]:
         return self.values
@@ -114,7 +121,7 @@ class TaggedRow(object):
 class BridgedInterfaceWithConvertableDataTypes(object):
 
     def __init__(self):
-        self.gateway = None
+        self.gateway: Union[JavaGateway, None] = None
 
     def python_init(self, gateway: JavaGateway):
         self.gateway = gateway
@@ -128,7 +135,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         for field_name in schema_def:
             schema_fields.append(
                 SchemaField(field_name, self.parse_schema_field_type_from_json(schema_def[field_name])))
-        return Schema(schema_fields)
+        return Schema(schema_fields, self.gateway)
 
     def parse_schema_field_type_from_json(self, val) -> FieldType:
         if type(val) == str:
@@ -268,6 +275,9 @@ class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataType
     def on_bundle_end(self) -> None:
         pass
 
+    def proxied_apply(self, input_row: Row):
+        return ListConverter().convert(self.apply(input_row), self.gateway._gateway_client)
+
     @abstractmethod
     def apply(self, input_row: Row) -> List[Row]:
         pass
@@ -291,6 +301,9 @@ class BackboneComponentOneToManyDoFn(ABC, BridgedInterfaceWithConvertableDataTyp
     @abstractmethod
     def on_bundle_end(self) -> None:
         pass
+
+    def proxied_apply(self, input_row: Row):
+        return ListConverter().convert(self.apply(input_row), self.gateway._gateway_client)
 
     @abstractmethod
     def apply(self, input_row: Row) -> List[TaggedRow]:
