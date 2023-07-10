@@ -127,7 +127,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         schema_fields: List[SchemaField] = []
         for field_name in schema_def:
             schema_fields.append(
-                SchemaField.of(field_name, self.parse_schema_field_type_from_json(schema_def[field_name])))
+                SchemaField(field_name, self.parse_schema_field_type_from_json(schema_def[field_name])))
         return Schema(schema_fields)
 
     def parse_schema_field_type_from_json(self, val) -> FieldType:
@@ -223,7 +223,7 @@ class BackboneComponentDefinition(ABC):
 class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
 
     @abstractmethod
-    def init(self, configstr: str) -> None:
+    def init(self, configstr: Union[str, None]) -> None:
         pass
 
     @abstractmethod
@@ -257,7 +257,7 @@ class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataType
         pass
 
     @abstractmethod
-    def init_from_driver(self, config_json_str: str) -> None:
+    def init_from_driver(self, config_json_str: Union[str, None]) -> None:
         pass
 
     @abstractmethod
