@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Union
+from typing import List, Union, MutableMapping
 
 from py4j.java_collections import ListConverter, MapConverter
 from py4j.java_gateway import JavaGateway, JavaMember
@@ -126,7 +126,10 @@ class BridgedInterfaceWithConvertableDataTypes(object):
     def python_init(self, gateway: JavaGateway):
         self.gateway = gateway
 
-    def python_schema_from_json_string(self, json_schema: str) -> Schema:
+    def jsonified_python_schema_from_json_string(self, json_schema: str) -> str:
+        return self.json_string_from_python_schema(self.python_schema_from_json_string(json_schema))
+
+    def python_schema_from_json_string(self, json_schema: str):
         schema_def: dict = json.loads(json_schema)
         return self.parse_schema_from_json(schema_def)
 
@@ -145,11 +148,14 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         else:
             return FieldType(TypeName.ARRAY, array_content_type=self.parse_schema_field_type_from_json(val[0]))
 
-    def python_row_from_json_string(self, json_row: str) -> Row:
+    def python_row_from_json_string(self, json_row: str):
         data: dict = json.loads(json_row)
         schema: Schema = self.parse_schema_from_json(data['schema'])
         raw_row: dict = data['contents']
         return self.parse_row_from_json(schema, raw_row)
+
+    def jsonified_python_row_from_json_string(self, json_row: str) -> str:
+        return self.json_string_from_python_row(self.python_row_from_json_string(json_row))
 
     def parse_row_from_json(self, schema: Schema, data: dict) -> Row:
         values: List[object] = []
@@ -248,11 +254,14 @@ class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
     def get_output_tags(self) -> List[str]:
         pass
 
-    def proxied_calculate_output_schema(self, input_schema: Schema):
-        return MapConverter().convert(input_schema, self.gateway._gateway_client)
+    def proxied_calculate_output_schema(self, input_schema: MutableMapping[str, Schema]):
+        input_schema_converted: dict[str, Schema] = {}
+        for key in input_schema.keys():
+            input_schema_converted[key] = input_schema[key]
+        return MapConverter().convert(self.calculate_output_schema(input_schema_converted), self.gateway._gateway_client)
 
     @abstractmethod
-    def calculate_output_schema(self, input_schema: Schema) -> dict[str, Schema]:
+    def calculate_output_schema(self, input_schema: dict[str, Schema]) -> dict[str, Schema]:
         pass
 
     class Java:
