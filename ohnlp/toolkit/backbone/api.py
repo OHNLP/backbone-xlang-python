@@ -6,17 +6,27 @@ from enum import Enum
 from typing import List, Union, MutableMapping
 
 from py4j.java_collections import ListConverter, MapConverter
-from py4j.java_gateway import JavaGateway, JavaMember
+from py4j.java_gateway import JavaGateway, JavaMember, JavaClass
 
 
 class FieldType(object):
     def __init__(self, type_name: TypeName, array_content_type: Union[FieldType, None] = None,
                  row_content_type: Union[Schema, None] = None):
-        if row_content_type is None:
-            row_content_type = []
-        self.type_name: TypeName = type_name
-        self.array_content_type: FieldType = array_content_type
-        self.content_obj_fields: Schema = row_content_type
+        self._type_name: TypeName = type_name
+        self._array_content_type: FieldType = array_content_type
+        self._content_obj_fields: Union[Schema, None] = row_content_type
+
+    def get_type_name(self) -> TypeName:
+        return self._type_name
+
+    def get_array_content_type(self) -> Union[None, FieldType]:
+        return self._array_content_type
+
+    def get_content_obj_fields(self) -> Union[Schema, None]:
+        return self._content_obj_fields
+
+    class Java:
+        implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonSchema$PythonFieldType"]
 
 
 class TypeName(Enum):
@@ -37,8 +47,14 @@ class TypeName(Enum):
 
 class SchemaField(object):
     def __init__(self, name: str, field_meta: FieldType):
-        self.name: str = name
-        self.field_type: FieldType = field_meta
+        self._name: str = name
+        self._field_type: FieldType = field_meta
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_field_type(self) -> FieldType:
+        return self._field_type
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonSchema$PythonSchemaField"]
@@ -46,20 +62,17 @@ class SchemaField(object):
 
 class Schema(object):
     def __init__(self, fields: List[SchemaField], gateway: JavaGateway):
-        self.gateway: JavaGateway = gateway
-        self.fields: List[SchemaField] = fields
-        self.fields_by_name: dict = {}
+        self._gateway: JavaGateway = gateway
+        self._fields: List[SchemaField] = fields
+        self._fields_by_name: dict = {}
         for field in fields:
-            self.fields_by_name[field.name] = field
+            self._fields_by_name[field.get_name()] = field
 
-    def proxied_get_fields(self):
-        return ListConverter().convert(self.fields, self.gateway._gateway_client)
-
-    def get_fields(self) -> List[SchemaField]:
-        return self.fields
+    def get_fields(self) -> Union[List[SchemaField], JavaClass]:
+        return ListConverter().convert(self._fields, self._gateway._gateway_client)
 
     def get_field(self, name: str) -> SchemaField:
-        return self.fields_by_name[name]
+        return self._fields_by_name[name]
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonSchema"]
@@ -67,35 +80,32 @@ class Schema(object):
 
 class Row(object):
     def __init__(self, schema: Schema, values: List[object]):
-        self.schema: Schema = schema
-        self.field_idx: dict[str, int] = {}
+        self._schema: Schema = schema
+        self._field_idx: dict[str, int] = {}
         for i in range(0, len(schema.get_fields())):
-            self.field_idx[schema.get_fields()[i].name] = i
-        self.values: List[object] = values
+            self._field_idx[schema.get_fields()[i].get_name()] = i
+        self._values: List[object] = values
 
     def get_schema(self) -> Schema:
-        return self.schema
+        return self._schema
 
     def get_field_index(self, field_name: str) -> Union[int, None]:
-        if self.field_idx[field_name] is not None:
-            return self.field_idx[field_name]
+        if self._field_idx[field_name] is not None:
+            return self._field_idx[field_name]
         else:
             return None
 
     def get_value(self, field_name: str) -> Union[object, None]:
         index = self.get_field_index(field_name)
-        return None if index is None else self.values[index]
+        return None if index is None else self._values[index]
 
-    def proxied_get_values(self):
-        return ListConverter().convert(self.get_values(), self.get_schema().gateway._gateway_client)
-
-    def get_values(self) -> List[object]:
-        return self.values
+    def get_values(self) -> Union[List[object], JavaClass]:
+        return ListConverter().convert(self.get_values(), self.get_schema()._gateway._gateway_client)
 
     def set_value(self, field_name: str, value: object):
         index = self.get_field_index(field_name)
         if index is not None:
-            self.values[index] = value
+            self._values[index] = value
         else:
             raise KeyError("Reference to non-existent field_name " + field_name + " in set_value")
 
@@ -105,14 +115,14 @@ class Row(object):
 
 class TaggedRow(object):
     def __init__(self, tag: str, row: Row):
-        self.tag: str = tag
-        self.row: Row = row
+        self._tag: str = tag
+        self._row: Row = row
 
     def get_tag(self) -> str:
-        return self.tag
+        return self._tag
 
     def get_row(self) -> Row:
-        return self.row
+        return self._row
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonTaggedRow"]
@@ -160,7 +170,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
     def parse_row_from_json(self, schema: Schema, data: dict) -> Row:
         values: List[object] = []
         for field in schema.get_fields():
-            values.append(self.parse_field_value_from_json(field.field_type, data[field.name]))
+            values.append(self.parse_field_value_from_json(field.get_field_type(), data[field.get_name()]))
 
         return Row(schema, values)
 
@@ -168,10 +178,10 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         if val is None:
             return None
         else:
-            if content_type.type_name == TypeName.ROW:
-                return self.parse_row_from_json(content_type.content_obj_fields, val)
-            elif content_type.type_name == TypeName.ARRAY:
-                child_type: FieldType = content_type.array_content_type
+            if content_type.get_type_name() == TypeName.ROW:
+                return self.parse_row_from_json(content_type.get_content_obj_fields(), val)
+            elif content_type.get_type_name() == TypeName.ARRAY:
+                child_type: FieldType = content_type.get_array_content_type()
                 sub_values: List[object] = []
                 for entry in val:
                     sub_values.append(self.parse_field_value_from_json(child_type, entry))
@@ -185,19 +195,19 @@ class BridgedInterfaceWithConvertableDataTypes(object):
     def parse_schema_to_json(self, schema: Schema) -> dict:
         ret: dict = {}
         for field in schema.get_fields():
-            ret[field.name] = self.parse_schema_field_type_to_json(field.field_type)
+            ret[field.get_name()] = self.parse_schema_field_type_to_json(field.get_field_type())
         return ret
 
     def parse_schema_field_type_to_json(self, field_type: FieldType):
-        if field_type.type_name == TypeName.ROW:
-            return self.parse_schema_to_json(field_type.content_obj_fields)
-        elif field_type.type_name == TypeName.ARRAY:
-            return [self.parse_schema_field_type_to_json(field_type.array_content_type)]
+        if field_type.get_type_name() == TypeName.ROW:
+            return self.parse_schema_to_json(field_type.get_content_obj_fields())
+        elif field_type.get_type_name() == TypeName.ARRAY:
+            return [self.parse_schema_field_type_to_json(field_type.get_array_content_type())]
         else:
-            return field_type.type_name.value
+            return field_type.get_type_name().value
 
     def json_string_from_python_row(self, row: Row) -> str:
-        schema_json = self.parse_schema_to_json(row.schema)
+        schema_json = self.parse_schema_to_json(row.get_schema())
         contents = self.parse_row_to_json(row)
         return json.dumps({
             "schema": schema_json,
@@ -206,17 +216,17 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_row_to_json(self, row: Row) -> dict:
         ret: dict = {}
-        for field in row.schema.get_fields():
-            ret[field.name] = self.parse_row_field_value_to_json(field.field_type, row.get_value(field.name))
+        for field in row.get_schema().get_fields():
+            ret[field.get_name()] = self.parse_row_field_value_to_json(field.get_field_type(), row.get_value(field.get_name()))
         return ret
 
     def parse_row_field_value_to_json(self, field_type: FieldType, data):
-        if field_type.type_name == TypeName.ROW:
+        if field_type.get_type_name() == TypeName.ROW:
             return self.parse_row_to_json(data)
-        elif field_type.type_name == TypeName.ARRAY:
+        elif field_type.get_type_name() == TypeName.ARRAY:
             ret = []
             for element in data:
-                ret.append(self.parse_row_field_value_to_json(field_type.array_content_type, element))
+                ret.append(self.parse_row_field_value_to_json(field_type.get_array_content_type(), element))
             return ret
         else:
             return data
@@ -270,7 +280,7 @@ class BackboneComponent(ABC, BridgedInterfaceWithConvertableDataTypes):
 
 class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataTypes):
     def __init__(self):
-        pass
+        super().__init__()
 
     @abstractmethod
     def init_from_driver(self, config_json_str: Union[str, None]) -> None:
@@ -297,7 +307,7 @@ class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataType
 
 class BackboneComponentOneToManyDoFn(ABC, BridgedInterfaceWithConvertableDataTypes):
     def __init__(self):
-        pass
+        super().__init__()
 
     @abstractmethod
     def init_from_driver(self, config_json_str: str) -> None:
