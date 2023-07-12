@@ -10,13 +10,13 @@ from py4j.java_gateway import JavaGateway, JavaMember, JavaClass
 
 
 class FieldType(object):
-    def __init__(self, type_name: TypeName, array_content_type: Union[FieldType, None] = None,
+    def __init__(self, type_name: str, array_content_type: Union[FieldType, None] = None,
                  row_content_type: Union[Schema, None] = None):
-        self._type_name: TypeName = type_name
+        self._type_name: str = type_name
         self._array_content_type: FieldType = array_content_type
         self._content_obj_fields: Union[Schema, None] = row_content_type
 
-    def get_type_name(self) -> TypeName:
+    def get_type_name(self) -> str:
         return self._type_name
 
     def get_array_content_type(self) -> Union[None, FieldType]:
@@ -152,11 +152,11 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_schema_field_type_from_json(self, val) -> FieldType:
         if type(val) == str:
-            return FieldType(TypeName[str(val)])
+            return FieldType(val)
         elif type(val) == dict:
-            return FieldType(TypeName.ROW, row_content_type=self.parse_schema_from_json(val))
+            return FieldType("ROW", row_content_type=self.parse_schema_from_json(val))
         else:
-            return FieldType(TypeName.ARRAY, array_content_type=self.parse_schema_field_type_from_json(val[0]))
+            return FieldType("ARRAY", array_content_type=self.parse_schema_field_type_from_json(val[0]))
 
     def python_row_from_json_string(self, json_row: str):
         data: dict = json.loads(json_row)
@@ -178,9 +178,9 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         if val is None:
             return None
         else:
-            if content_type.get_type_name() == TypeName.ROW:
+            if content_type.get_type_name() == "ROW":
                 return self.parse_row_from_json(content_type.get_content_obj_fields(), val)
-            elif content_type.get_type_name() == TypeName.ARRAY:
+            elif content_type.get_type_name() == "ARRAY":
                 child_type: FieldType = content_type.get_array_content_type()
                 sub_values: List[object] = []
                 for entry in val:
@@ -199,12 +199,12 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         return ret
 
     def parse_schema_field_type_to_json(self, field_type: FieldType):
-        if field_type.get_type_name() == TypeName.ROW:
+        if field_type.get_type_name() == "ROW":
             return self.parse_schema_to_json(field_type.get_content_obj_fields())
-        elif field_type.get_type_name() == TypeName.ARRAY:
+        elif field_type.get_type_name() == "ARRAY":
             return [self.parse_schema_field_type_to_json(field_type.get_array_content_type())]
         else:
-            return field_type.get_type_name().value
+            return field_type.get_type_name()
 
     def json_string_from_python_row(self, row: Row) -> str:
         schema_json = self.parse_schema_to_json(row.get_schema())
@@ -221,9 +221,9 @@ class BridgedInterfaceWithConvertableDataTypes(object):
         return ret
 
     def parse_row_field_value_to_json(self, field_type: FieldType, data):
-        if field_type.get_type_name() == TypeName.ROW:
+        if field_type.get_type_name() == "ROW":
             return self.parse_row_to_json(data)
-        elif field_type.get_type_name() == TypeName.ARRAY:
+        elif field_type.get_type_name() == "ARRAY":
             ret = []
             for element in data:
                 ret.append(self.parse_row_field_value_to_json(field_type.get_array_content_type(), element))
