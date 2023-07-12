@@ -159,7 +159,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_row_from_json(self, schema: Schema, data: dict) -> Row:
         values: List[object] = []
-        for field in schema.fields:
+        for field in schema.get_fields():
             values.append(self.parse_field_value_from_json(field.field_type, data[field.name]))
 
         return Row(schema, values)
@@ -184,7 +184,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_schema_to_json(self, schema: Schema) -> dict:
         ret: dict = {}
-        for field in schema.fields:
+        for field in schema.get_fields():
             ret[field.name] = self.parse_schema_field_type_to_json(field.field_type)
         return ret
 
@@ -206,7 +206,7 @@ class BridgedInterfaceWithConvertableDataTypes(object):
 
     def parse_row_to_json(self, row: Row) -> dict:
         ret: dict = {}
-        for field in row.schema.fields:
+        for field in row.schema.get_fields():
             ret[field.name] = self.parse_row_field_value_to_json(field.field_type, row.get_value(field.name))
         return ret
 
