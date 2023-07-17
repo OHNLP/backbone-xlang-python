@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ohnlp-backbone-xlang-python",
-    version="1.0.28",
-    description="Python support for OHNLP Toolkit Backbone Components",
+    name="ohnlptk-xlang-python",
+    version="0.0.1",
+    description="Python support for OHNLP Toolkit Components",
     author="Andrew Wen",
     author_email="contact@ohnlp.org",
     packages=find_packages(),
