@@ -107,7 +107,7 @@ class Row(object):
         return None if index is None else self._values[index]
 
     def get_values(self) -> Union[List[object], JavaClass]:
-        return ListConverter().convert(self.get_values(), self.get_schema()._gateway._gateway_client)
+        return ListConverter().convert(self._values, self.get_schema()._gateway._gateway_client)
 
     def set_value(self, field_name: str, value: object):
         index = self.get_field_index(field_name)
@@ -120,7 +120,7 @@ class Row(object):
         ret: list[str] = []
         ret.append('Schema: ' + self._schema.toString())
         ret.append('Values: ')
-        for value in self.get_values():
+        for value in self._values:
             ret.append('- ' + str(value))
         return '\r\n'.join(ret)
 
