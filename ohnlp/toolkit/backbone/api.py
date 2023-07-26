@@ -74,6 +74,13 @@ class Schema(object):
     def get_field(self, name: str) -> SchemaField:
         return self._fields_by_name[name]
 
+    def toString(self):
+        ret: list[str] = []
+        ret.append('Fields: ')
+        for field in self._fields:
+            ret.append('- ' + field.get_name() + ', ' + field.get_field_type().get_type_name())
+        return '\r\n'.join(ret)
+
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonSchema"]
 
@@ -108,6 +115,16 @@ class Row(object):
             self._values[index] = value
         else:
             raise KeyError("Reference to non-existent field_name " + field_name + " in set_value")
+
+    def toString(self):
+        ret: list[str] = []
+        ret.append('Schema: ' + self._schema.toString())
+        ret.append('Values: ')
+        for value in self.get_values():
+            ret.append('- ' + str(value))
+        return '\r\n'.join(ret)
+
+
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonRow"]
