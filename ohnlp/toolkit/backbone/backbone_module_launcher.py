@@ -16,7 +16,7 @@ def find_free_port():
     return sock.getsockname()[1]
 
 
-def launch_bridge(entrypoint: str, class_name: str, init_type: str):
+def launch_bridge(entrypoint: str, class_name: str, init_type: str, bridge_id: str):
     first_init: bool = init_type == 'component'
 
     # Import the backbone module to be used
@@ -51,7 +51,7 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str):
     python_port: int = gateway.python_parameters.port
 
     # Write vars out to JSON
-    with open('python_bridge_meta.json', 'w') as f:
+    with open('python_bridge_meta_' + bridge_id + '.json', 'w') as f:
         json.dump({
             'token': auth_token,
             'java_port': java_port,
@@ -59,5 +59,5 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str):
         }, f)
 
     # Create monitor file used by java process to indicate gateway init complete
-    with open('python_bridge_meta.done', 'w') as f:
+    with open('python_bridge_meta_' + bridge_id + '.done', 'w') as f:
         f.writelines('done')

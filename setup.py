@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ohnlptk-xlang-python",
-    version="1.0.0",
+    version="1.1.0",
     description="Python support for OHNLP Toolkit Components",
     author="Andrew Wen",
     author_email="contact@ohnlp.org",
