@@ -304,11 +304,19 @@ class BackboneComponentOneToOneDoFn(ABC, BridgedInterfaceWithConvertableDataType
         pass
 
     @abstractmethod
+    def on_component_start(self) -> None:
+        pass
+
+    @abstractmethod
     def on_bundle_start(self) -> None:
         pass
 
     @abstractmethod
     def on_bundle_end(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_component_end(self) -> None:
         pass
 
     def proxied_apply(self, input_row: Row):
