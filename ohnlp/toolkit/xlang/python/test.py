@@ -1,7 +1,7 @@
 from typing import List, Union, Dict
 
-from ohnlp.toolkit.xlang.python.api import BackboneComponent, ComponentDescription, Schema, ConfigurationProperty, TypeName, \
-    TypeCollection
+from ohnlp.toolkit.xlang.python.api import Component, ComponentDescription, Schema, ConfigurationProperty, TypeName, \
+    TypeCollection, OneToOneTransform, PartitionedRowCollection
 
 
 @ComponentDescription(
@@ -20,25 +20,35 @@ from ohnlp.toolkit.xlang.python.api import BackboneComponent, ComponentDescripti
         ),
     }
 )
-class TestComponent(BackboneComponent):
+class TestComponent(OneToOneTransform):
+    def get_input_tag(self) -> str:
+        pass
+
+    def get_output_tag(self) -> str:
+        pass
+
+    def expand_coll(self, input_val: PartitionedRowCollection) -> PartitionedRowCollection:
+        pass
+
+    def get_required_columns(self, input_tag: str) -> Union[Schema, None]:
+        pass
+
+    def calculate_output_schema(self, input_schemas: Dict[str, Schema]) -> Dict[str, Schema]:
+        pass
+
+    def init(self):
+        pass
+
+    def teardown(self):
+        pass
+
+    def to_java(self):
+        pass
 
     test_field_1: str = ''
     test_field_2: List[str] = []
 
-    def init(self, configstr: Union[str, None]) -> None:
-        pass
 
-    def to_do_fn_config(self) -> str:
-        return ""
-
-    def get_input_tag(self) -> str:
-        return ""
-
-    def get_output_tags(self) -> List[str]:
-        return [""]
-
-    def calculate_output_schema(self, input_schema: Dict[str, Schema]) -> Dict[str, Schema]:
-        return {}
 
 
 if __name__ == "__main__":
