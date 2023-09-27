@@ -22,14 +22,16 @@ def launch_bridge(entrypoint: str, class_name: str, init_type: str, bridge_id: s
     # Import the backbone module to be used
     module: ModuleType = importlib.import_module(entrypoint)
     cls = getattr(module, class_name)
-    entry_class: BackboneComponentDefinition = cls()
+    entry_class = cls()
 
     # Generate an authentication token for this session
     auth_token = ''.join(secrets.choice(string.ascii_uppercase + string.digits)
                          for i in range(16))
 
     # Get appropriate entry point
-    if first_init:
+    if init_type == 'direct':
+        entry_point = entry_class
+    elif init_type == 'component':
         entry_point = entry_class.get_component_def()
     else:
         entry_point = entry_class.get_do_fn()
