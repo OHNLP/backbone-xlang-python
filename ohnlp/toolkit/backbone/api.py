@@ -389,7 +389,7 @@ class UserDefinedPartitionMappingFunction(Generic[UDF_IN_TYPE, UDF_OUT_TYPE], AB
         pass
 
     @abstractmethod
-    def process(self, out: OutputCollector, input_value: Any) -> None:
+    def apply(self, out: OutputCollector, input_value: Any) -> None:
         pass
 
     @abstractmethod
@@ -652,7 +652,7 @@ class ToolkitModule(ABC):
         function = self.check_and_get_active_function(udf_uid)
         function.on_bundle_start()
 
-    def call_udf_process(self, udf_uid: str, element, processcontext):
+    def call_udf_apply(self, udf_uid: str, element, processcontext):
         function = self.check_and_get_active_function(udf_uid)
         output_context = OutputCollector()
         output_context.init_java(self._gateway, processcontext)
@@ -662,7 +662,7 @@ class ToolkitModule(ABC):
                 element_to_process = Row.of_java(element)
             else:
                 raise ValueError(f"Inconvertible object of type {element.getClass().getName()} supplied to UDF call")
-        function.process(output_context, element_to_process)  # TODO ensure convertible
+        function.apply(output_context, element_to_process)  # TODO ensure convertible
 
     def call_udf_on_bundle_finish(self, udf_uid: str, processcontext):
         function = self.check_and_get_active_function(udf_uid)
