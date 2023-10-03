@@ -7,8 +7,6 @@ from types import ModuleType
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 
-from ohnlp.toolkit.backbone.api import BackboneComponentDefinition
-
 
 def find_free_port():
     sock = socket.socket()

@@ -4,7 +4,7 @@ import json
 import uuid
 from abc import abstractmethod, ABC
 from enum import Enum
-from typing import Any, Generic, TypeVar, Union, Dict, List, Type, Optional
+from typing import Any, Generic, TypeVar, Union, Dict, List, Type, Optional, Iterable
 from uuid import UUID
 
 from py4j.java_collections import JavaMap, ListConverter
@@ -15,8 +15,11 @@ from ohnlp.toolkit.backbone.api import TypeName
 # Global Component/Function Registries
 _registered_components: Dict[str, Type[Transform]] = {}
 _registered_udfs: Dict[str, Type[UserDefinedPartitionMappingFunction]] = {}
+_registered_udrfs: Dict[str, Type[UserDefinedReductionFunction]] = {}
+
 _active_components: Dict[str, Transform] = {}
 _active_udfs: Dict[str, UserDefinedPartitionMappingFunction] = {}
+_active_udrfs: Dict[str, UserDefinedReductionFunction] = {}
 _gateway: JavaGateway
 
 
@@ -318,6 +321,21 @@ class PartitionedCollection(Generic[PCOLL_TYPE], WrappedJavaObject):
     def set_encoder(self, encoder):
         self._java_obj.setCoder(encoder.to_java_coder())
 
+    def reduce_global(self, desc: str,
+                      reduction_func: UserDefinedReductionFunction[PCOLL_TYPE],
+                      config: Dict) -> PartitionedCollection[Iterable[UDF_OUT_TYPE]]:
+        result_pcoll: PartitionedCollection[Iterable[UDF_OUT_TYPE]] = PartitionedCollection[Iterable[UDF_OUT_TYPE]](
+            self._transform_obj
+        )
+        java_comb_func = self._transform_obj.callUDRF(str(reduction_func.toolkit_component_uid))  # TODO
+        result_java_pcoll = self._java_obj.apply(
+            desc,
+            self._jvm.org.apache.beam.sdk.transforms.Combine.globally(
+                java_comb_func
+            ))
+        result_pcoll.init_java(self._jvm, result_java_pcoll)
+        return result_pcoll
+
     def to_java(self):
         return self._java_obj
 
@@ -398,6 +416,18 @@ class UserDefinedPartitionMappingFunction(Generic[UDF_IN_TYPE, UDF_OUT_TYPE], AB
 
     @abstractmethod
     def on_teardown(self) -> None:
+        pass
+
+
+class UserDefinedReductionFunction(Generic[UDF_IN_TYPE], ABC):
+    toolkit_component_uid: UUID = None
+
+    @abstractmethod
+    def init_from_driver(self, json_config: Optional[Dict]) -> None:
+        pass
+
+    @abstractmethod
+    def reduce(self, elements: Iterable[UDF_IN_TYPE]) -> UDF_IN_TYPE:
         pass
 
 
@@ -564,6 +594,12 @@ class ToolkitModule(ABC):
             raise NameError(f"Function {udf_uid} called when it is not active/was already unregistered")
         return _active_udfs.get(udf_uid.lower())
 
+    @staticmethod
+    def check_and_get_active_reduction(udrf_uid: str) -> UserDefinedReductionFunction:
+        if udrf_uid.lower() not in _active_udrfs:
+            raise NameError(f"Reduction function {udrf_uid} called when it is not active/was already unregistered")
+        return _active_udrfs.get(udrf_uid.lower())
+
     # Transform-related methods
     def register_transform_instance(self, name: str) -> str:
         """ Instantiates a new python transform instance, injects configuration values,
@@ -673,6 +709,27 @@ class ToolkitModule(ABC):
     def call_udf_on_teardown(self, udf_uid: str):
         function = self.check_and_get_active_function(udf_uid)
         function.on_teardown()
+
+    # User-Defined Functions
+    def register_udrf(self, udrf_uid: str) -> str:
+        if udrf_uid not in _registered_udrfs:
+            raise NameError(f"UDRF {udrf_uid} not found or is not registered via @ModuleDeclaration!")
+        instance = _registered_udrfs[udrf_uid]()
+        # TODO do we need to init from java?
+        instance_uid = str(uuid.uuid4())
+        _active_udrfs[instance_uid.lower()] = instance
+        return instance_uid
+
+    def call_udrf_on_init(self, udrf_uid: str, conf_json_str: str):
+        function = self.check_and_get_active_reduction(udrf_uid)
+        if conf_json_str is not None:
+            function.init_from_driver(json.loads(conf_json_str))
+        else:
+            function.init_from_driver(None)
+
+    def call_udrf_reduce(self, udrf_uid: str, input_iterable: Iterable):
+        function = self.check_and_get_active_reduction(udrf_uid)
+        return function.reduce(input_iterable)
 
     class Java:
         implements = ["org.ohnlp.backbone.api.components.xlang.python.PythonEntryPoint"]
